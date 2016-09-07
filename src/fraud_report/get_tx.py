@@ -3,9 +3,13 @@ Created on Aug 22, 2016
 
 @author: eli
 '''
+'''
+some style changes
+
+'''
 from datetime import date
 from datetime import timedelta
-from util import load_config, init_db_con, get_tx_detail_from_db, save_fraud_result,get_cc_hash_from_db
+import util
 
 
 mon_tr={'JAN':1,'FEB':2, 'MAR':3,'APR':4,'MAY':5,'JUN':6, 'JUL':7,'AUG':8, 'SEP':9,'OCT':10, 'NOV':11,'DEC':12}
@@ -22,7 +26,6 @@ def get_cc(db_con, error_code, end_date = None, step = 1):
     cc_list = []
     
     if end_date: 
-        
         dd,mmm,yyyy = end_date.split('-')
         start_date = (date(int(yyyy), mon_tr[mmm], int(dd)) - timedelta(days = step)).strftime('%d-%b-%Y')
     else: 
@@ -37,30 +40,30 @@ def get_cc(db_con, error_code, end_date = None, step = 1):
             query_params['status_code'] = sc
             query_params['start_date'] = start_date
             query_params['end_date'] = end_date
-            cc_list += get_cc_hash_from_db(db_con, query_params)
+            cc_list += util.get_cc_hash_from_db(db_con, query_params)
     
     for cc_hash, cnt_custid in cc_list:
         if cnt_custid > 1:
-            print '{}, # of cust_id: {}'.format(cc_hash, cnt_custid)
+            print '{cc_hash}, # of cust_id: {cnt_custid}'.format(cc_hash = cc_hash, cnt_custid = cnt_custid)
             yield cc_hash, cnt_custid
             
             
 def get_tx_by_cc(db_con, gen_cc):
     for cc_hash, cnt_custid in gen_cc:
-        tx_recs = get_tx_detail_from_db(db_con, cc_hash)
+        tx_recs = util.get_tx_detail_from_db(db_con, cc_hash)
         yield cc_hash, cnt_custid, tx_recs
 
 def default_report():
     status_code = ['05','89','00']
-    db_config = load_config()
-    db_context = init_db_con(db_config)
+    db_config = util.load_config()
+    db_context = util.init_db_con(db_config)
  
-    #gen_cc_hash = get_cc(db_context, status_code, 'dd-MMM-yyyy', n) 
+    #gen_cc_hash = get_cc(db_context, status_code, '07-SEP-2016', 5) 
        
     gen_cc_hash = get_cc(db_context, status_code)
     gen_tx = get_tx_by_cc(db_context, gen_cc_hash)
 
-    save_fraud_result(date.today(), gen_tx)    
+    util.save_fraud_result(date.today(), gen_tx)    
     print "completed"
         
 if __name__ == '__main__':
